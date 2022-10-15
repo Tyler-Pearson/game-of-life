@@ -2,6 +2,13 @@ from tkinter import *
 from gameOfLife import GameOfLife
 
 
+SIM_PAUSED = 0
+SIM_ACTIVE = 1
+PAUSE_SIM = "Pause Sim"
+START_SIM = "Start Sim"
+SIM_DELAY = 500 # 0.5sec
+GUI_DIMENSIONS = "800x600"
+
 
 class Window(Frame):
 
@@ -9,6 +16,7 @@ class Window(Frame):
         Frame.__init__(self, main)
         self.main = main
         self.main.protocol("WM_DELETE_WINDOW", self.client_exit)
+        self.__sim_state = SIM_PAUSED
         self.init_window()
 
     def init_window(self):
@@ -28,10 +36,12 @@ class Window(Frame):
         self.__garden_label.pack()
 
         # garden buttons
+        self.sim_button = Button(self, text=START_SIM, command=self.sim_start_stop)
+        self.sim_button.pack()
         pass_time_button = Button(self, text="Pass Time", command=self.pass_time_garden)
-        pass_time_button.pack(side=LEFT)
+        pass_time_button.pack()
         reset_button = Button(self, text="Reset Garden", command=self.reset_garden)
-        reset_button.pack(side=LEFT)
+        reset_button.pack()
 
         # key bindings
         self.main.bind('<Return>', self.pass_time_garden)
@@ -41,6 +51,20 @@ class Window(Frame):
     def client_exit(self, event=None):
         print("Closing up.")
         exit()
+
+    def schedule_simulate(self):
+        self.pass_time_garden()
+        self.__simulate = self.main.after(SIM_DELAY, self.schedule_simulate)
+
+    def sim_start_stop(self):
+        if (self.__sim_state is SIM_PAUSED):
+            self.__sim_state = SIM_ACTIVE
+            self.sim_button['text'] = PAUSE_SIM
+            self.__simulate = self.main.after(0, self.schedule_simulate)
+        else:
+            self.__sim_state = SIM_PAUSED
+            self.sim_button['text'] = START_SIM
+            self.main.after_cancel(self.__simulate)
 
     def pass_time_garden(self, event=None):
         self.__garden.pass_time()
@@ -56,7 +80,7 @@ def main():
     print("Hello World!")
 
     root = Tk()
-    root.geometry("800x600")
+    root.geometry(GUI_DIMENSIONS)
     app = Window(root)
     root.mainloop()
 
